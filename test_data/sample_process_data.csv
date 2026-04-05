@@ -1,0 +1,11 @@
+Batch_ID,Date,Machine,Operator,Measurement,Defect_Count,Status
+B-1001,2026-04-01,M-A,Alice,10.2,0,Pass
+B-1002,2026-04-01,M-B,Bob,10.4,1,Warning
+B-1003,2026-04-02,M-A,Alice,9.8,0,Pass
+B-1004,2026-04-02,M-B,Charlie,10.1,0,Pass
+B-1005,2026-04-03,M-C,Bob,10.5,2,Fail
+B-1006,2026-04-03,M-A,Charlie,10.0,0,Pass
+B-1007,2026-04-04,M-B,Alice,9.9,1,Warning
+B-1008,2026-04-04,M-C,Bob,10.3,0,Pass
+B-1009,2026-04-05,M-A,Alice,10.1,0,Pass
+B-1010,2026-04-05,M-C,Charlie,9.7,3,Fail
