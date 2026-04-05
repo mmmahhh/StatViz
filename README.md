@@ -24,34 +24,49 @@
 - **状态管理**: [Zustand](https://github.com/pmndrs/zustand)
 - **测试**: [Vitest](https://vitest.dev/)
 
-## 🚀 快速开始
+---
 
-### 安装依赖
+## 📖 操作手册 (User Manual)
+
+### 1. 环境准备
+确保您的开发环境满足以下要求：
+- **Node.js**: v18.0.0+
+- **包管理器**: npm 或 yarn
+
+### 2. 🚀 快速开始
 ```bash
+# 安装依赖
 npm install
-```
 
-### 启动开发服务器
-```bash
+# 启动开发服务器
 npm run dev
-```
 
-### 运行测试
-```bash
+# 运行测试
 npm run test
+
+# 构建生产版本
+npm run build
 ```
 
-## 📂 项目结构
+### 3. 📂 项目核心模块说明
+- **数据导入 (`src/utils/fileParser.ts`)**: 处理 CSV 和 Excel 解析。
+- **统计算法 (`src/utils/stats.ts`)**: 核心描述性统计逻辑。
+- **可视化组件 (`src/components/charts/`)**: D3.js 图表实现方案。
+- **状态中心 (`src/store/useDataStore.ts`)**: 基于 Zustand 的轻量级状态流。
 
-```text
-src/
-├── components/       # UI 组件与统计图表
-├── hooks/            # 自定义 React Hooks
-├── locales/          # 多语言翻译
-├── store/            # 状态管理
-├── utils/            # 统计计算与文件解析工具
-└── types/            # TypeScript 类型定义
-```
+### 4. ⌨️ 开发规范
+- **i18n**: 翻译文件位于 `src/locales/`。
+- **Lint**: 提交前请运行 `npm run lint` 确保代码风格一致。
+
+---
+
+## 🛡️ 维护与安全建议
+
+- **数据隐私**: 严禁将包含真实敏感信息的 `test_data/` 上传至公开仓库。
+- **仓库可见性**: 如需处理机密数据，请使用 GitHub CLI 将仓库设为私有：
+  ```bash
+  gh repo edit --visibility private
+  ```
 
 ## 📄 开源协议
 
