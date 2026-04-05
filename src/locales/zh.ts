@@ -12,6 +12,7 @@ export const zh: Translations = {
     runAnalysis: '运行分析',
     export: '导出报告',
     exportPNG: '导出为图片 (PNG)',
+    exportPDF: '导出完整报告 (PDF)',
     exportCSV: '导出统计结果 (CSV)',
     settings: '系统设置',
     noData: '无数据',

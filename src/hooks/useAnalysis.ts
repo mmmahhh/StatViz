@@ -28,21 +28,21 @@ export function useAnalysis({ showPlot, chartType, activeDataset, compareDataset
   }, [rawData]);
 
   const analysisResult = useMemo(() => {
-    if (showPlot && chartType === 'boxplot' && dimensions.yAxis && rawData.length > 0) {
+    if (showPlot && dimensions.yAxis && rawData.length > 0) {
       return calculateBoxPlotStats(rawData, dimensions.xAxis[0] || '', dimensions.yAxis);
     }
     return { stats: [], metadata: { totalCount: 0, validCount: 0, invalidCount: 0 } };
-  }, [showPlot, chartType, dimensions, rawData]);
+  }, [showPlot, dimensions, rawData]);
 
   const boxPlotData = analysisResult.stats;
   const analysisMetadata = analysisResult.metadata;
 
   const compareBoxPlotData = useMemo(() => {
-    if (showPlot && chartType === 'boxplot' && dimensions.yAxis && compareDataset && compareDataset.rawData.length > 0) {
+    if (showPlot && dimensions.yAxis && compareDataset && compareDataset.rawData.length > 0) {
       return calculateBoxPlotStats(compareDataset.rawData, dimensions.xAxis[0] || '', dimensions.yAxis).stats;
     }
     return undefined;
-  }, [showPlot, chartType, dimensions, compareDataset]);
+  }, [showPlot, dimensions, compareDataset]);
 
   const histogramValues = useMemo(() => {
     if (showPlot && chartType === 'histogram' && dimensions.yAxis && rawData.length > 0) {

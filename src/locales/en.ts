@@ -10,6 +10,7 @@ export const en = {
     runAnalysis: 'Run Analysis',
     export: 'Export',
     exportPNG: 'Export as PNG',
+    exportPDF: 'Export Report as PDF',
     exportCSV: 'Export Stats as CSV',
     settings: 'Settings',
     noData: 'No Data',

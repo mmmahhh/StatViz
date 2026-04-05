@@ -29,6 +29,7 @@ interface DataState {
   addDataset: (name: string, data: RawDataRow[]) => void;
   removeDataset: (id: string) => void;
   setActiveDataset: (id: string) => void;
+  updateCell: (datasetId: string, rowIndex: number, column: string, value: string | number) => void;
   setRawData: (data: RawDataRow[]) => void;
   setDimensions: (dims: Partial<DimensionConfig>) => void;
   setLanguage: (lang: 'en' | 'zh') => void;
@@ -64,6 +65,16 @@ export const useDataStore = create<DataState>((set) => ({
     }),
 
   setActiveDataset: (id) => set({ activeDatasetId: id }),
+
+  updateCell: (datasetId, rowIndex, column, value) =>
+    set((state) => ({
+      datasets: state.datasets.map((ds) => {
+        if (ds.id !== datasetId) return ds;
+        const newRawData = [...ds.rawData];
+        newRawData[rowIndex] = { ...newRawData[rowIndex], [column]: value };
+        return { ...ds, rawData: newRawData };
+      }),
+    })),
 
   // Legacy-compatible: updates the active dataset's rawData
   setRawData: (data) =>

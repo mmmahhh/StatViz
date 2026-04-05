@@ -16,6 +16,15 @@ export const AIInsightPanel: React.FC<AIInsightPanelProps> = ({ stats, outliersC
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // Create a stable string representation of the data to avoid re-fetching 
+  // if only non-data props change (like chart types elsewhere).
+  const dataSignature = JSON.stringify({
+    n: stats.n,
+    mean: stats.mean.toFixed(4),
+    stdev: stats.stdev.toFixed(4),
+    outliers: outliersCount
+  });
+
   const fetchInsights = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -36,7 +45,7 @@ export const AIInsightPanel: React.FC<AIInsightPanelProps> = ({ stats, outliersC
     } finally {
       setLoading(false);
     }
-  }, [stats, outliersCount]);
+  }, [dataSignature]); // Depend on data signature instead of raw objects
 
   useEffect(() => {
     fetchInsights();

@@ -19,7 +19,6 @@ interface ChartViewProps {
   setOverlayOptions: (opts: StatsOverlayOptions) => void;
   boxPlotData: BoxPlotStats[];
   compareBoxPlotData?: BoxPlotStats[];
-  metadata?: { totalCount: number; validCount: number; invalidCount: number };
   histogramValues: number[];
   descriptiveStats: DescriptiveResult | null;
   dimensions: DimensionConfig;
@@ -105,7 +104,6 @@ export const ChartView: React.FC<ChartViewProps> = ({
           <AIInsightPanel 
             stats={descriptiveStats} 
             outliersCount={boxPlotData.reduce((acc, curr) => acc + (curr.outliers?.length || 0), 0)} 
-            metadata={metadata}
           />
           <div className="pt-4 border-t border-white/[0.04]">
             <StatsSummaryPanel stats={descriptiveStats} columnName={dimensions.yAxis} />

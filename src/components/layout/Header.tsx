@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Play, CheckCircle2, Image, FileDown, Settings } from 'lucide-react';
+import { Download, Play, CheckCircle2, Image, FileDown, Settings, FileText } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Dataset } from '../../store/useDataStore';
@@ -16,6 +16,7 @@ interface HeaderProps {
   setExportMenuOpen: (open: boolean) => void;
   onExportPNG: () => void;
   onExportCSV: () => void;
+  onExportPDF: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   setExportMenuOpen,
   onExportPNG,
   onExportCSV,
+  onExportPDF,
 }) => {
   const { t } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -71,10 +73,14 @@ export const Header: React.FC<HeaderProps> = ({
               {t('app.export')}
             </Button>
             {exportMenuOpen && (
-              <div className="absolute right-0 top-10 w-48 bg-linear-panel border border-linear-border rounded-lg shadow-2xl z-50 overflow-hidden">
+              <div className="absolute right-0 top-10 w-52 bg-linear-panel border border-linear-border rounded-lg shadow-2xl z-50 overflow-hidden">
                 <button onClick={onExportPNG} className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-linear-secondary hover:bg-white/5 hover:text-white transition-colors">
                   <Image size={14} />
                   {t('app.exportPNG')}
+                </button>
+                <button onClick={onExportPDF} className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-linear-secondary hover:bg-white/5 hover:text-white transition-colors border-t border-linear-borderSubtle">
+                  <FileText size={14} />
+                  {t('app.exportPDF')}
                 </button>
                 <button onClick={onExportCSV} className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-linear-secondary hover:bg-white/5 hover:text-white transition-colors border-t border-linear-borderSubtle">
                   <FileDown size={14} />
