@@ -42,3 +42,19 @@ export interface BoxPlotStats {
   /** Unique ID for the box, often a serialized path of its nested categories */
   id: string;
 }
+
+export interface DescriptiveResult {
+  n: number;
+  mean: number;
+  stdev: number;
+  seMean: number;
+  min: number;
+  q1: number;
+  median: number;
+  q3: number;
+  max: number;
+  skewness: number;
+  kurtosis: number;
+  ciLower: number;
+  ciUpper: number;
+}

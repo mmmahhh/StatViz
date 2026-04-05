@@ -1,5 +1,5 @@
 import React from 'react';
-import { DescriptiveResult } from '../../utils/descriptiveStats';
+import { DescriptiveResult } from '../../types';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface StatsSummaryPanelProps {

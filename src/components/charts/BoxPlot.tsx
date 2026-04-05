@@ -143,7 +143,7 @@ function drawBoxGroup(
   });
 }
 
-export const BoxPlot: React.FC<BoxPlotProps> = ({
+export const BoxPlot: React.FC<BoxPlotProps> = React.memo(({
   data,
   compareData,
   compareLabel,
@@ -281,4 +281,4 @@ export const BoxPlot: React.FC<BoxPlotProps> = ({
         viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" />
     </div>
   );
-};
+});

@@ -5,6 +5,6 @@ import App from './App';
 describe('App', () => {
   it('renders the application title', () => {
     render(<App />);
-    expect(screen.getByText('QualityBox-Insight')).toBeDefined();
+    expect(screen.getByText('QualityBox 质量分析')).toBeDefined();
   });
 });

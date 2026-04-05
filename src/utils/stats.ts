@@ -1,11 +1,17 @@
 import { RawDataRow, BoxPlotStats } from '../types';
 import * as d3 from 'd3';
 
+/**
+ * Enhanced statistics calculation for quality engineering.
+ * Handles data cleaning, outlier detection (IQR), and robust descriptive stats.
+ */
 export const calculateBoxPlotStats = (
   data: RawDataRow[],
   xDimension: string,
   yDimension: string
-): BoxPlotStats[] => {
+): { stats: BoxPlotStats[]; metadata: { totalCount: number; validCount: number; invalidCount: number } } => {
+  const totalCount = data.length;
+  
   // Group data by xDimension (or treat as one group if missing)
   const groupedData = d3.group(data, (d) => {
     if (!xDimension) return 'Total';
@@ -14,38 +20,52 @@ export const calculateBoxPlotStats = (
   });
 
   const stats: BoxPlotStats[] = [];
+  let totalValidCount = 0;
 
   for (const [groupName, groupRecords] of groupedData) {
-    // Extract continuous values for the yDimension
+    // Robust data cleaning: Filter out non-numeric values and NaNs
     const values = groupRecords
       .map((d) => {
         const val = d[yDimension];
-        return typeof val === 'number' ? val : Number(val);
+        if (val === null || val === undefined || val === '') return NaN;
+        const num = Number(val);
+        return isFinite(num) ? num : NaN;
       })
       .filter((v) => !isNaN(v));
 
+    totalValidCount += values.length;
+
     if (values.length === 0) continue;
 
-    // Use d3 to sort and calculate quartiles
+    // Sort values for quartile calculation
     values.sort(d3.ascending);
 
+    const n = values.length;
     const q1 = d3.quantile(values, 0.25) ?? 0;
     const q2 = d3.quantile(values, 0.5) ?? 0;
     const q3 = d3.quantile(values, 0.75) ?? 0;
     const iqr = q3 - q1;
 
-    // Define outlier thresholds
+    // Standard IQR outlier thresholds (1.5 * IQR)
     const lowerBound = q1 - 1.5 * iqr;
     const upperBound = q3 + 1.5 * iqr;
 
-    // Filter outliers
-    const outliers = values.filter((v) => v < lowerBound || v > upperBound);
+    const outliers: number[] = [];
+    let minIdx = -1;
+    let maxIdx = -1;
 
-    // Filter regular values to find min and max within boundaries
-    const regularValues = values.filter((v) => v >= lowerBound && v <= upperBound);
-    const min = regularValues.length > 0 ? Math.min(...regularValues) : q1;
-    const max = regularValues.length > 0 ? Math.max(...regularValues) : q3;
+    for (let i = 0; i < n; i++) {
+      const v = values[i];
+      if (v < lowerBound || v > upperBound) {
+        outliers.push(v);
+      } else {
+        if (minIdx === -1) minIdx = i;
+        maxIdx = i;
+      }
+    }
 
+    const min = minIdx !== -1 ? values[minIdx] : q1;
+    const max = maxIdx !== -1 ? values[maxIdx] : q3;
     const mean = d3.mean(values) ?? 0;
 
     stats.push({
@@ -61,5 +81,12 @@ export const calculateBoxPlotStats = (
     });
   }
 
-  return stats;
+  return {
+    stats,
+    metadata: {
+      totalCount,
+      validCount: totalValidCount,
+      invalidCount: totalCount - totalValidCount,
+    }
+  };
 };

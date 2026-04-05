@@ -10,7 +10,7 @@ interface HistogramProps {
   binCount?: number;
 }
 
-export const Histogram: React.FC<HistogramProps> = ({
+export const Histogram: React.FC<HistogramProps> = React.memo(({
   values,
   width = 800,
   height = 450,
@@ -166,4 +166,4 @@ export const Histogram: React.FC<HistogramProps> = ({
       <svg ref={svgRef} className="w-full h-full max-w-[1000px] max-h-[600px] overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" />
     </div>
   );
-};
+});

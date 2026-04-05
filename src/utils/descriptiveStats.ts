@@ -1,20 +1,5 @@
 import * as d3 from 'd3';
-
-export interface DescriptiveResult {
-  n: number;
-  mean: number;
-  stdev: number;
-  seMean: number;
-  min: number;
-  q1: number;
-  median: number;
-  q3: number;
-  max: number;
-  skewness: number;
-  kurtosis: number;
-  ciLower: number;
-  ciUpper: number;
-}
+import { DescriptiveResult } from '../types';
 
 /**
  * Calculate comprehensive descriptive statistics for an array of numbers.
