@@ -1,73 +1,66 @@
-# StatViz
+# StatViz (Stat-Insight)
 
-**StatViz** (原名 MiniTab-Lite) 是一款轻量级、基于 Web 的数据统计与可视化分析工具。它旨在为用户提供类似 Minitab 的核心统计功能，同时拥有现代化的 Web 交互体验。
+**StatViz** 是一款专业、轻量级且高度互动的 Web 端数据统计与质量可视化分析工具。它将传统的统计学分析与现代大语言模型 (LLM) 相结合，旨在为质量工程师、数据分析师提供“开箱即用”的深度数据洞察。
 
-![StatViz Banner](https://img.shields.io/badge/Status-Beta-blue?style=for-the-badge)
+![StatViz Banner](https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge)
 ![Tech Stack](https://img.shields.io/badge/Tech-React%20%7C%20TypeScript%20%7C%20Vite-61dafb?style=for-the-badge)
+![AI Powered](https://img.shields.io/badge/AI-Powered-purple?style=for-the-badge)
 
-## ✨ 功能特性
+## 🚀 核心功能升级
 
-- 📊 **多维数据可视化**：支持箱线图 (Box Plot)、直方图 (Histogram) 等专业统计图表。
-- 📈 **描述性统计分析**：自动计算均值、标准差、中位数、四分位数等关键统计指标。
-- 📂 **灵活的数据导入**：支持 CSV、Excel 等多种格式的文件解析。
-- 🌍 **多语言支持**：内置中英文双语界面 (i18n)。
-- ⚡ **实时响应**：基于 Zustand 构建高效的全局状态管理，实现数据的毫秒级更新。
+- 🤖 **AI 深度质量诊断**：
+  - 接入真实 LLM API（支持 **MiniMax**, **DeepSeek**, **OpenAI**, **SiliconFlow** 等）。
+  - 自动剥离思考过程 (`<think>`)，精准提取统计洞察 JSON。
+  - 基于均值、标准差、偏度等统计指标，自动生成自然语言形式的“正态性”、“稳定性”及“异常值”分析报告。
+- 📊 **“上图下表”专业布局**：
+  - 采用垂直流式布局，上方展示动态统计图表与 AI 报告，下方平铺显示所有数据集。
+  - 支持自动滚动回顶部的交互反馈，确保分析结果实时可见。
+- 📝 **多数据集实时编辑**：
+  - 同时加载并显示多份文件数据（如白班 vs 夜班）。
+  - **单元格级实时编辑**：直接点击表格即可修改数据，图表与 AI 分析将毫秒级同步更新。
+- 📄 **全量 PDF 导出报告**：
+  - 支持 **A4 自动分页** 技术，彻底解决长报告截断问题。
+  - 导出模式下自动渲染全量原始数据，确保生成的 PDF 报告包含 100% 的数据细节。
+- 📈 **专业统计图表**：
+  - 基于 D3.js 实现的高性能箱线图 (Box Plot) 和直方图 (Histogram)。
+  - 支持异常值检测 (IQR)、正态拟合曲线及多数据集对比。
 
-## 🛠️ 技术栈
+## ⚙️ 模型配置指南
 
-- **框架**: [React 18](https://reactjs.org/)
-- **语言**: [TypeScript](https://www.typescriptlang.org/)
-- **构建工具**: [Vite](https://vitejs.dev/)
-- **图表库**: [D3.js](https://d3js.org/)
-- **UI 组件库**: [Ant Design 5](https://ant.design/)
-- **样式**: [Tailwind CSS](https://tailwindcss.com/)
-- **状态管理**: [Zustand](https://github.com/pmndrs/zustand)
-- **测试**: [Vitest](https://vitest.dev/)
+点击顶部导航栏右上角的 **⚙️ (AI 设置)** 图标：
+1. **厂商预设**：一键切换 OpenAI、DeepSeek、MiniMax (abab6.5s) 或 SiliconFlow。
+2. **API 凭证**：填入您的 API Key。数据仅保存在浏览器本地 `localStorage`，确保安全。
+3. **自定义**：支持任何兼容 OpenAI 接口规范的自定义 Base URL。
 
----
+## 🛠️ 开发与部署
 
-## 📖 操作手册 (User Manual)
-
-### 1. 环境准备
-确保您的开发环境满足以下要求：
-- **Node.js**: v18.0.0+
-- **包管理器**: npm 或 yarn
-
-### 2. 🚀 快速开始
+### 1. 快速启动
 ```bash
-# 安装依赖
+# 安装依赖 (新增 jspdf, html2canvas 等)
 npm install
 
 # 启动开发服务器
 npm run dev
 
-# 运行测试
-npm run test
-
-# 构建生产版本
-npm run build
+# 运行测试与规范检查
+npm test
+npm run lint
 ```
 
-### 3. 📂 项目核心模块说明
-- **数据导入 (`src/utils/fileParser.ts`)**: 处理 CSV 和 Excel 解析。
-- **统计算法 (`src/utils/stats.ts`)**: 核心描述性统计逻辑。
-- **可视化组件 (`src/components/charts/`)**: D3.js 图表实现方案。
-- **状态中心 (`src/store/useDataStore.ts`)**: 基于 Zustand 的轻量级状态流。
-
-### 4. ⌨️ 开发规范
-- **i18n**: 翻译文件位于 `src/locales/`。
-- **Lint**: 提交前请运行 `npm run lint` 确保代码风格一致。
+### 2. 技术栈
+- **核心框架**: React 18 + TypeScript + Vite
+- **状态管理**: Zustand (结合 `persist` 中间件实现配置持久化)
+- **图表引擎**: D3.js
+- **导出方案**: html2canvas + jsPDF
+- **样式方案**: Tailwind CSS + Lucide Icons
 
 ---
 
-## 🛡️ 维护与安全建议
+## 📖 核心目录结构
+- `src/utils/aiAnalyst.ts`: LLM 接口封装与智能过滤算法。
+- `src/components/settings/SettingsModal.tsx`: 多厂商 API 配置中心。
+- `src/store/useDataStore.ts`: 支持实时编辑的全局数据仓库。
+- `src/locales/`: 完整的国际化支持 (ZH/EN)。
 
-- **数据隐私**: 严禁将包含真实敏感信息的 `test_data/` 上传至公开仓库。
-- **仓库可见性**: 如需处理机密数据，请使用 GitHub CLI 将仓库设为私有：
-  ```bash
-  gh repo edit --visibility private
-  ```
-
-## 📄 开源协议
-
-本项目采用 MIT 协议。
+## 📄 许可协议
+本项目基于 MIT 协议开源。
