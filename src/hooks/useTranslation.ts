@@ -1,40 +1,46 @@
-import { useCallback } from 'react';
 import { useDataStore } from '../store/useDataStore';
 import { en } from '../locales/en';
 import { zh } from '../locales/zh';
 
-export function useTranslation() {
-  const language = useDataStore((s) => s.language);
-  const setLanguage = useDataStore((s) => s.setLanguage);
+type TranslationSchema = typeof en;
 
-  const t = useCallback((key: string, params?: Record<string, string | number>) => {
-    const keys = key.split('.');
-    let current: any = language === 'zh' ? zh : en;
+type DotPaths<T, Prefix extends string = ''> = T extends string
+  ? Prefix
+  : { [K in keyof T & string]: DotPaths<T[K], Prefix extends '' ? K : `${Prefix}.${K}`> }[keyof T & string];
+
+type TranslationKey = DotPaths<TranslationSchema>;
+
+/**
+ * Super lightweight translation hook.
+ */
+export function useTranslation() {
+  const { language, setLanguage } = useDataStore();
+
+  const translations: TranslationSchema = language === 'zh' ? (zh as TranslationSchema) : en;
+
+  function t(path: TranslationKey, params?: Record<string, string | number>): string {
+    const keys = path.split('.');
+    let value: unknown = translations;
     
-    for (const k of keys) {
-      if (current[k] === undefined) {
-        // Fallback to English if key missing in current language
-        let fallback: any = en;
-        for (const fk of keys) {
-          if (fallback[fk] === undefined) return key;
-          fallback = fallback[fk];
-        }
-        current = fallback;
-        break;
+    for (const key of keys) {
+      if (value && typeof value === 'object' && key in (value as Record<string, unknown>)) {
+        value = (value as Record<string, unknown>)[key];
+      } else {
+        return path;
       }
-      current = current[k];
     }
 
-    if (typeof current !== 'string') return key;
+    if (typeof value !== 'string') return path;
+    let result = value;
 
-    let res = current;
     if (params) {
-      Object.entries(params).forEach(([pk, pv]) => {
-        res = res.replace(`{${pk}}`, String(pv));
+      Object.entries(params).forEach(([key, val]) => {
+        result = result.replace(`{${key}}`, String(val));
       });
     }
-    return res;
-  }, [language]);
+
+    return result;
+  }
 
   return { t, language, setLanguage };
 }

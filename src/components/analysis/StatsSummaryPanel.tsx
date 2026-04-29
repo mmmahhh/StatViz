@@ -40,6 +40,13 @@ export const StatsSummaryPanel: React.FC<StatsSummaryPanelProps> = ({ stats, col
         <StatCard label={t('stats.ciLower')} value={fmt(stats.ciLower)} />
         <StatCard label={t('stats.ciUpper')} value={fmt(stats.ciUpper)} />
       </div>
+
+      <div className="mt-4 p-4 rounded-xl border border-linear-brandAccent/20 bg-linear-brandAccent/5 text-[12px] text-linear-secondary leading-relaxed">
+        结论建议：
+        {stats.stdev <= Math.abs(stats.mean) * 0.05
+          ? ' 数据波动整体较小，适合继续做批次间中位数和离散度对比。'
+          : ' 数据离散程度较高，建议结合箱线图异常点、批次分层和设备状态进一步排查原因。'}
+      </div>
     </div>
   );
 };

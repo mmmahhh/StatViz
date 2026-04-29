@@ -1,0 +1,208 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776652582007,
+  "projectRoot": "/Users/mh/Documents/OJ/05_运维与持续改进/systems/StatViz",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "18.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "18.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "vite",
+        "version": "5.2.2",
+        "category": "build"
+      },
+      {
+        "name": "vitest",
+        "version": "1.4.0",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc && vite build",
+      "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+      "preview": "vite preview",
+      "test": "vitest"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "public",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 2,
+      "lastAccessed": 1776652581986,
+      "keyFiles": [
+        "index.html",
+        "operation-manual.html"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 0,
+      "lastAccessed": 1776652581986,
+      "keyFiles": []
+    },
+    "graphify-out": {
+      "path": "graphify-out",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776652581991,
+      "keyFiles": []
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 1,
+      "lastAccessed": 1776652581993,
+      "keyFiles": [
+        "operation-manual.html"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 5,
+      "lastAccessed": 1776652581993,
+      "keyFiles": [
+        "App.test.tsx",
+        "App.tsx",
+        "index.css",
+        "jstat.d.ts",
+        "main.tsx"
+      ]
+    },
+    "test_data": {
+      "path": "test_data",
+      "purpose": null,
+      "fileCount": 16,
+      "lastAccessed": 1776652581994,
+      "keyFiles": [
+        "OJ_TEST_DATA_README.md",
+        "OJ_batch_0402_vs_0403.csv",
+        "OJ_batch_single_vs_range.csv",
+        "OJ_date_grouping_demo.csv",
+        "OJ_msa_kappa_judgement.csv"
+      ]
+    },
+    "dist/assets": {
+      "path": "dist/assets",
+      "purpose": "Static assets",
+      "fileCount": 4,
+      "lastAccessed": 1776652581994,
+      "keyFiles": [
+        "index-CaZ3lSvJ.css",
+        "index-DRF3IdNw.js",
+        "index.es-DazcbcAT.js"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1776652581997,
+      "keyFiles": []
+    },
+    "src/test": {
+      "path": "src/test",
+      "purpose": "Test files",
+      "fileCount": 7,
+      "lastAccessed": 1776652581997,
+      "keyFiles": [
+        "capabilityStats.test.ts",
+        "descriptiveStats.test.ts",
+        "filterData.test.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/store/useDataStore.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776652686730,
+      "type": "directory"
+    },
+    {
+      "path": "src/hooks/useAnalysis.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776652627191,
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/useBasicAnalysis.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776652627258,
+      "type": "file"
+    },
+    {
+      "path": "src/store/useDataStore.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776652686675,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 1,
+      "lastAccessed": 1776652720601,
+      "type": "directory"
+    },
+    {
+      "path": "src/hooks/useAnalysis_Bugs.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776652737675,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

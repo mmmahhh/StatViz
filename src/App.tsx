@@ -1,17 +1,18 @@
 import React, { useRef, useMemo, useState, useCallback } from 'react';
-import { flushSync } from 'react-dom';
 import { useDataStore, useActiveDataset } from './store/useDataStore';
 import { parseFile } from './utils/fileParser';
+import { FileParsingError, FileTooLargeError } from './utils/fileParsingErrors';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { ChartView } from './components/analysis/ChartView';
+import { ReportSummaryPanel } from './components/analysis/ReportSummaryPanel';
 import { useAnalysis } from './hooks/useAnalysis';
 import { StatsOverlayOptions } from './components/charts/BoxPlot';
 import { useTranslation } from './hooks/useTranslation';
-import { AlertCircle, BarChart2 } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
 import { Button } from './components/ui/Button';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { VirtualTable } from './components/ui/VirtualTable';
+import { exportElementToPDF } from './utils/pdfGenerator';
 
 const defaultOverlayOptions: StatsOverlayOptions = {
   showMean: true,
@@ -48,13 +49,22 @@ function App() {
     dimensions,
     columns,
     boxPlotData,
+    analysisMetadata,
     compareBoxPlotData,
     histogramValues,
     descriptiveStats,
+    capabilityStats,
+    capabilityConfig,
+    regressionData,
+    hypothesisData,
+    msaData,
+    kappaData,
+    linearityData,
+    module,
+    effectiveXAxisLabel,
     canRunAnalysis
   } = useAnalysis({
     showPlot,
-    chartType,
     activeDataset,
     compareDataset
   });
@@ -62,7 +72,11 @@ function App() {
   const handleRunAnalysis = useCallback(() => {
     setShowPlot(true);
     if (mainScrollRef.current) {
-      mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      try {
+        mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        mainScrollRef.current.scrollTop = 0;
+      }
     }
   }, []);
 
@@ -76,18 +90,27 @@ function App() {
 
     try {
       const parsedData = await parseFile(file);
-      const baseName = file.name.replace(/\.[^/.]+$/, '');
-      let name = baseName;
-      let suffix = 2;
-      while (datasets.some(d => d.name === name)) {
-        name = `${baseName} (${suffix++})`;
+      let name = file.name.replace(/\.[^/.]+$/, '');
+      if (datasets.some(d => d.name === name)) {
+        name = `${name} (${datasets.length + 1})`;
       }
       addDataset(name, parsedData);
       setShowPlot(false);
       setCompareDatasetId(null);
     } catch (error) {
-      console.error("Error parsing file:", error);
-      alert(t('app.errorParsing'));
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error parsing file:", error);
+      }
+      
+      // Show user-friendly error message based on error type
+      if (error instanceof FileTooLargeError) {
+        alert(error.message);
+      } else if (error instanceof FileParsingError) {
+        alert(error.message);
+      } else {
+        alert(t('app.errorParsing'));
+      }
     }
     
     if (fileInputRef.current) {
@@ -95,11 +118,20 @@ function App() {
     }
   };
 
-  const handleDrop = (e: React.DragEvent, target: 'x' | 'y') => {
+  const handleDrop = (e: React.DragEvent, target: 'x' | 'y' | 'x2') => {
     e.preventDefault();
     if (!draggedColumn) return;
-    if (target === 'x') setDimensions({ xAxis: [draggedColumn] });
-    else setDimensions({ yAxis: draggedColumn });
+    if (target === 'x') {
+      const currentX = [...dimensions.xAxis];
+      currentX[0] = draggedColumn;
+      setDimensions({ xAxis: currentX });
+    } else if (target === 'x2') {
+      const currentX = [...dimensions.xAxis];
+      currentX[1] = draggedColumn;
+      setDimensions({ xAxis: currentX });
+    } else {
+      setDimensions({ yAxis: draggedColumn });
+    }
     setDraggedColumn(null);
   };
 
@@ -128,6 +160,9 @@ function App() {
       link.click();
       URL.revokeObjectURL(url);
     };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+    };
     img.src = url;
     setExportMenuOpen(false);
   }, []);
@@ -152,62 +187,42 @@ function App() {
       `95% CI Upper,${s.ciUpper}`,
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.download = `stats-${dimensions.yAxis}-${Date.now()}.csv`;
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.click();
+    URL.revokeObjectURL(url);
     setExportMenuOpen(false);
   }, [descriptiveStats, dimensions.yAxis]);
 
   const exportAsPDF = useCallback(async () => {
     if (!reportContainerRef.current) return;
     setExportMenuOpen(false);
+    setIsExporting(true);
 
-    // Synchronously flush isExporting=true so the table expands fully before capture
-    flushSync(() => setIsExporting(true));
-    // Wait one paint frame so layout reflects the expanded table
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const reportName = activeDataset?.name 
+      ? activeDataset.name.replace(/[^\w\u4e00-\u9fa5-]+/g, '_') 
+      : 'statviz';
 
-    try {
-      const element = reportContainerRef.current;
-      if (!element) return;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#131316',
-        logging: false,
-        windowHeight: element.scrollHeight,
+    // Wait two animation frames for React to flush state + DOM to paint fully
+    requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
+        try {
+          await exportElementToPDF(reportContainerRef.current!, {
+            filename: `${reportName}-${module}-report`,
+            backgroundColor: '#131316',
+            scale: 2
+          });
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          alert(`PDF export failed: ${message}`);
+        } finally {
+          setIsExporting(false);
+        }
       });
-
-      const imgData = canvas.toDataURL('image/png');
-
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-
-      pdf.save(`statviz-full-report-${Date.now()}.pdf`);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    } finally {
-      setIsExporting(false);
-    }
-  }, []);
+    });
+  }, [activeDataset?.name, module]);
 
   return (
     <div className="flex h-screen w-full bg-linear-bg text-linear-primary overflow-hidden">
@@ -279,18 +294,45 @@ function App() {
                     compareBoxPlotData={compareBoxPlotData}
                     histogramValues={histogramValues}
                     descriptiveStats={descriptiveStats}
+                    capabilityStats={capabilityStats}
+                    capabilityConfig={capabilityConfig}
+                    regressionData={regressionData}
+                    hypothesisData={hypothesisData}
+                    msaData={msaData}
+                    kappaData={kappaData}
+                    linearityData={linearityData}
+                    module={module}
                     dimensions={dimensions}
+                    xAxisLabel={effectiveXAxisLabel}
                     chartContainerRef={chartContainerRef}
                   />
                 </div>
+              )}
+
+              {showPlot && (
+                <ReportSummaryPanel
+                  activeDataset={activeDataset || undefined}
+                  module={module}
+                  xAxisLabel={effectiveXAxisLabel}
+                  yAxisLabel={dimensions.yAxis}
+                  boxPlotData={boxPlotData}
+                  descriptiveStats={descriptiveStats}
+                  capabilityStats={capabilityStats}
+                  regressionData={regressionData}
+                  hypothesisData={hypothesisData}
+                  msaData={msaData}
+                  kappaData={kappaData}
+                  linearityData={linearityData}
+                  metadata={analysisMetadata}
+                />
               )}
               
               <div className="space-y-6">
                 {datasets.map((ds) => {
                   const dsColumns = ds.rawData.length > 0 ? Object.keys(ds.rawData[0]) : [];
                   return (
-                    <div key={ds.id} className="flex-none rounded-2xl bg-linear-surface border border-linear-border shadow-linear-level2 p-8 flex flex-col relative overflow-hidden">
-                      <div className="flex items-center gap-3 mb-6 relative z-10">
+                    <div key={ds.id} className="flex-none rounded-2xl bg-linear-surface border border-linear-border shadow-linear-level2 p-8 flex flex-col relative overflow-hidden h-[600px]">
+                      <div className="flex items-center gap-3 mb-6 relative z-10 shrink-0">
                         <div className="p-3 bg-white/5 rounded-lg border border-white/10 shadow-sm">
                           <BarChart2 size={24} className="text-linear-primary" />
                         </div>
@@ -302,48 +344,15 @@ function App() {
                         </div>
                       </div>
 
-                      <div className="flex-1 bg-[#0a0a0b] rounded-lg border border-linear-borderSubtle overflow-hidden flex flex-col relative z-10 shadow-linear-level1">
-                        <div className="overflow-x-auto relative">
-                          <table className="w-full text-left text-[13px] text-linear-secondary whitespace-nowrap table-fixed">
-                            <thead className="bg-[#121314] text-linear-quaternary font-linear-emphasis uppercase tracking-wider text-[11px] sticky top-0 border-b border-linear-borderSubtle z-20">
-                              <tr>
-                                <th className="px-4 py-3 font-medium w-16 text-center border-r border-linear-borderSubtle/50">{t('app.row')}</th>
-                                {dsColumns.map(col => (
-                                  <th key={col} className="px-4 py-3 font-medium border-x border-linear-borderSubtle/20 w-40">{col}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-linear-borderSubtle/20">
-                              {(isExporting ? ds.rawData : ds.rawData.slice(0, 50)).map((row, idx) => (
-                                <tr key={idx} className="hover:bg-white/5 transition-colors cursor-default">
-                                  <td className="px-4 py-2 text-center text-linear-quaternary font-mono text-[12px] border-r border-linear-borderSubtle/50">{idx + 1}</td>
-                                  {dsColumns.map(col => (
-                                    <td 
-                                      key={col} 
-                                      className="px-4 py-2 border-x border-linear-borderSubtle/20 outline-none focus:bg-linear-brand/10 focus:text-white transition-colors"
-                                      contentEditable={!isExporting}
-                                      suppressContentEditableWarning
-                                      onBlur={(e) => {
-                                        if (isExporting) return;
-                                        const newValue = (e.currentTarget.textContent || '').trim();
-                                        const isNumeric = /^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(newValue);
-                                        useDataStore.getState().updateCell(ds.id, idx, col, isNumeric ? Number(newValue) : newValue);
-                                      }}
-                                    >
-                                      {String(row[col] ?? '')}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                          {ds.rawData.length > 50 && !isExporting && (
-                            <div className="p-3 text-center border-t border-linear-borderSubtle text-[12px] text-linear-tertiary flex items-center justify-center gap-2 bg-[#0a0a0b] sticky bottom-0">
-                              <AlertCircle size={14} className="opacity-70" />
-                              {t('app.showingRows', { n: 50, total: ds.rawData.length })}
-                            </div>
-                          )}
-                        </div>
+                      <div className="flex-1 bg-[#0a0a0b] rounded-lg border border-linear-borderSubtle overflow-hidden flex flex-col relative z-10 shadow-linear-level1 min-h-0">
+                        <VirtualTable 
+                          data={ds.rawData}
+                          columns={dsColumns}
+                          datasetId={ds.id}
+                          onUpdateCell={(id, row, col, val) => useDataStore.getState().updateCell(id, row, col, val)}
+                          isExporting={isExporting}
+                          height={400}
+                        />
                       </div>
                     </div>
                   );

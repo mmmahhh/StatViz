@@ -35,14 +35,25 @@ interface BoxPlotProps {
 
 // Palette
 const COLORS = {
-  primary: '#5e6ad2',       // Indigo brand
-  compare: '#f59e0b',       // Amber
+  primary: '#7170ff',       // Brand primary
+  compare: '#f59e0b',       // Amber comparison
   whisker: '#e0e2e8',
-  outlierFill: '#f87171',
-  outlierStroke: '#b91c1c',
-  meanLine: '#22d3ee',      // Cyan for mean
+  outlierFill: '#ff4d4f',
+  outlierStroke: '#cf1322',
+  meanLine: '#13c2c2',      // Cyan for mean
   labelText: '#8a8f98',
 };
+
+let _measureCanvas: HTMLCanvasElement | null = null;
+function getTextWidth(text: string, font: string): number {
+  if (!_measureCanvas) {
+    _measureCanvas = document.createElement('canvas');
+  }
+  const ctx = _measureCanvas.getContext('2d');
+  if (!ctx) return text.length * 7;
+  ctx.font = font;
+  return ctx.measureText(text).width;
+}
 
 function drawBoxGroup(
   selection: d3.Selection<SVGGElement, BoxPlotStats, SVGGElement, unknown>,
@@ -92,6 +103,21 @@ function drawBoxGroup(
         .attr('x1', xOffset).attr('x2', xOffset + boxWidth)
         .attr('y1', yScale(d.q2 || 0)).attr('y2', yScale(d.q2 || 0))
         .attr('stroke', COLORS.whisker).attr('stroke-width', 2.5);
+        
+      // Explicit median label with outline for better readability
+      g.append('text')
+        .attr('x', xOffset + half)
+        .attr('y', yScale(d.q2 || 0) - 6)
+        .style('font-size', '11px')
+        .style('font-weight', '700')
+        .style('paint-order', 'stroke')
+        .style('stroke', '#000000')
+        .style('stroke-width', '2.5px')
+        .style('stroke-linecap', 'round')
+        .style('stroke-linejoin', 'round')
+        .attr('fill', '#ffffff')
+        .attr('text-anchor', 'middle')
+        .text((d.q2 || 0).toFixed(3));
     }
 
     // Min/Max caps & labels
@@ -166,11 +192,8 @@ export const BoxPlot: React.FC<BoxPlotProps> = React.memo(({
     svgSelection.selectAll('*').remove();
 
     if (data.length === 0) {
-      console.log("BoxPlot: No data to render");
       return;
     }
-
-    console.log("BoxPlot: Rendering with", data.length, "primary groups and", compareData?.length, "compare groups");
 
     const margin = { top: 40, right: 60, bottom: 70, left: 65 };
     const innerWidth = width - margin.left - margin.right;
@@ -268,9 +291,11 @@ export const BoxPlot: React.FC<BoxPlotProps> = React.memo(({
     legendItems.forEach((item) => {
       legendGroup.append('rect').attr('x', legendX).attr('y', -5).attr('width', 12).attr('height', 12)
         .attr('fill', item.color).attr('rx', 2);
+      // Use measureText for accurate width with CJK characters
+      const textWidth = getTextWidth(item.label, '11px sans-serif');
       legendGroup.append('text').attr('x', legendX + 16).attr('y', 5)
         .attr('fill', '#a0a8b8').style('font-size', '11px').text(item.label);
-      legendX += 16 + item.label.length * 6.5 + 24;
+      legendX += 16 + textWidth + 24;
     });
 
   }, [data, compareData, compareLabel, primaryLabel, width, height, xAxisLabel, yAxisLabel, overlayOptions, isComparison, t]);

@@ -46,4 +46,23 @@ describe('useDataStore (multi-dataset)', () => {
     const ds = useDataStore.getState().datasets[0];
     expect(ds.dimensions.yAxis).toBe('col');
   });
+
+  it('setGroupBuilder updates the active dataset grouping config', () => {
+    useDataStore.getState().addDataset('Test', [{ 日期: '2026-03-01', 点位: 'D1', 数值: 1 }]);
+    const activeId = useDataStore.getState().activeDatasetId!;
+    useDataStore.getState().setGroupBuilder(activeId, {
+      enabled: true,
+      separator: '',
+      fields: [
+        { column: '日期', transform: 'month', prefix: '' },
+        { column: '点位', transform: 'original', prefix: '外径' },
+        { column: '', transform: 'original', prefix: '' },
+      ],
+    });
+    const ds = useDataStore.getState().datasets[0];
+    expect(ds.groupBuilder.enabled).toBe(true);
+    expect(ds.groupBuilder.fields[0].column).toBe('日期');
+    expect(ds.groupBuilder.fields[1].column).toBe('点位');
+    expect(ds.groupBuilder.fields[1].prefix).toBe('外径');
+  });
 });

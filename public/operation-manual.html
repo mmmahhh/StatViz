@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StatViz 操作手册</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --panel: #171a21;
+        --text: #f3f5f7;
+        --muted: #a7b0ba;
+        --brand: #56b6c2;
+        --line: rgba(255, 255, 255, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: linear-gradient(180deg, #0d1015 0%, #131822 100%);
+        color: var(--text);
+        line-height: 1.65;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 20px 80px;
+      }
+      .hero, .card {
+        background: rgba(23, 26, 33, 0.88);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 24px;
+        backdrop-filter: blur(10px);
+      }
+      .hero { margin-bottom: 20px; }
+      .card { margin-top: 16px; }
+      h1, h2, h3 { margin: 0 0 12px; }
+      h1 { font-size: 30px; }
+      h2 { font-size: 20px; color: var(--brand); }
+      h3 { font-size: 16px; }
+      p, li { color: var(--text); }
+      .muted { color: var(--muted); }
+      ol, ul { margin: 8px 0 0 20px; padding: 0; }
+      code {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px 6px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      .tip {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(86, 182, 194, 0.12);
+        border: 1px solid rgba(86, 182, 194, 0.2);
+        color: #d7f4f7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="hero">
+        <h1>StatViz 操作手册</h1>
+        <p class="muted">
+          适用对象：质量工程师、工艺工程师、检验员。本文用于指导日常使用箱线图、MSA、Kappa、线性与偏移等功能。
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>1. 快速开始</h2>
+        <ol>
+          <li>点击左侧或首页中的 <code>导入数据集 (.csv, .xlsx)</code>。</li>
+          <li>导入 Excel 或 CSV 文件。</li>
+          <li>在左侧 <code>数据列</code> 中，将字段拖入 <code>X 轴</code> 和 <code>Y 轴</code>。</li>
+          <li>若原始数据按日期记录，可开启左侧 <code>日期分组</code>，按月自动生成类似 <code>3月外径D1</code> 的分组。</li>
+          <li>点击右上角 <code>运行分析</code>。</li>
+          <li>查看图表、统计摘要和正式报告摘要。</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>2. 常用分析场景</h2>
+        <div class="grid">
+          <div>
+            <h3>同规格批次对比</h3>
+            <ul>
+              <li>先在左侧模板中指定 <code>规格列</code> 和 <code>规格值</code></li>
+              <li>X 轴：<code>生产批次</code></li>
+              <li>Y 轴：<code>检测值</code></li>
+              <li>用途：如 <code>0402</code> 与 <code>0403</code> 批次比较</li>
+            </ul>
+          </div>
+          <div>
+            <h3>优品 / 劣品对比</h3>
+            <ul>
+              <li>X 轴：<code>质量判定</code></li>
+              <li>Y 轴：<code>检测值</code></li>
+              <li>用途：比较优品与劣品中位数和波动范围</li>
+            </ul>
+          </div>
+          <div>
+            <h3>单批次 vs 大批次区间</h3>
+            <ul>
+              <li>当前数据集：筛选单一批次，如 <code>0402</code></li>
+              <li>对比数据集：区间映射，如 <code>0320-0330</code></li>
+              <li>在图表顶部选择 <code>对比数据集</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="tip">建议优先使用左侧的“业务快速模板”功能，可减少手工输入筛选条件。</div>
+      </section>
+
+      <section class="card">
+        <h2>3. MSA 相关功能</h2>
+        <div class="grid">
+          <div>
+            <h3>MSA - 计量型 (Gage R&amp;R)</h3>
+            <ul>
+              <li>X1：零件</li>
+              <li>X2：操作员</li>
+              <li>Y：测量值</li>
+            </ul>
+          </div>
+          <div>
+            <h3>MSA - 计数型 (Kappa)</h3>
+            <ul>
+              <li>X1：坩埚编码</li>
+              <li>X2：评估员</li>
+              <li>Y：判定结果</li>
+            </ul>
+          </div>
+          <div>
+            <h3>MSA - 线性与偏移</h3>
+            <ul>
+              <li>X：参考值</li>
+              <li>Y：测量值</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4. 导出与分享</h2>
+        <ul>
+          <li><code>导出为图片 (PNG)</code>：适合发消息、贴汇报。</li>
+          <li><code>导出完整报告 (PDF)</code>：适合发同事、归档。</li>
+          <li><code>导出统计结果 (CSV)</code>：适合二次分析。</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>5. 注意事项</h2>
+        <ul>
+          <li>大文件分析主要依赖浏览器性能，建议优先清洗无关列。</li>
+          <li>MSA 计量型要求平衡数据，若各组合重复次数不一致，系统会拒绝计算。</li>
+          <li>Kappa 分析适用于属性判定数据，不适合数值型测量值。</li>
+          <li>若想做单批次与历史大区间对比，建议使用两个数据集分别筛选后再比较。</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

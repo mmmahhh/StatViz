@@ -19,10 +19,36 @@ export interface DimensionConfig {
   color: string | null;
 }
 
+export type DateGroupingGranularity = 'day' | 'week' | 'month';
+
+export interface DateGroupingConfig {
+  enabled: boolean;
+  dateColumn: string;
+  categoryColumn: string | null;
+  granularity: DateGroupingGranularity;
+  labelPrefix: string;
+}
+
+export type GroupTransform = 'original' | 'day' | 'week' | 'month';
+
+export interface GroupBuilderField {
+  column: string;
+  transform: GroupTransform;
+  prefix: string;
+}
+
+export interface GroupBuilderConfig {
+  enabled: boolean;
+  separator: string;
+  fields: GroupBuilderField[];
+}
+
 /**
  * Statistical results for a single box in the box plot.
  */
 export interface BoxPlotStats {
+  /** Sample size for the group */
+  n: number;
   /** First quartile (25th percentile) */
   q1: number;
   /** Second quartile (50th percentile / median) */
@@ -57,4 +83,116 @@ export interface DescriptiveResult {
   kurtosis: number;
   ciLower: number;
   ciUpper: number;
+}
+
+export type AnalysisModule = 'basic' | 'capability' | 'regression' | 'hypothesis' | 'msa' | 'msa-kappa' | 'msa-linearity';
+
+export interface CapabilityConfig {
+  usl: number | null;
+  lsl: number | null;
+  target: number | null;
+  subgroupSize: number;
+}
+
+export interface CapabilityResult {
+  cp: number | null;
+  cpl: number | null;
+  cpu: number | null;
+  cpk: number | null;
+  pp: number | null;
+  ppl: number | null;
+  ppu: number | null;
+  ppk: number | null;
+  cpm: number | null;
+  ppmTotalExpected: number | null;
+  ppmTotalObserved: number | null;
+  overallStDev: number;
+  withinStDev: number;
+}
+
+export interface RegressionResult {
+  slope: number;
+  intercept: number;
+  r: number;
+  rSquared: number;
+  equation: string;
+  n: number;
+}
+
+export interface GroupStats {
+  name: string;
+  n: number;
+  mean: number;
+  stdev: number;
+}
+
+export interface HypothesisResult {
+  method: 't-Test' | 'ANOVA';
+  statistic: number;
+  df: number | string; // e.g. "2, 27" for ANOVA
+  pValue: number;
+  significant: boolean;
+  alpha: number;
+  groupStats: GroupStats[];
+}
+
+export interface MSAVarComponent {
+  source: string;
+  varComp: number;
+  contribution: number; // %Contribution
+}
+
+export interface MSAGageResult {
+  source: string;
+  stdDev: number;
+  studyVar: number;
+  percentStudyVar: number;
+}
+
+export interface MSAResult {
+  varComponents: MSAVarComponent[];
+  gageEvaluation: MSAGageResult[];
+  ndc: number;
+  totalVar: number;
+  isAcceptable: 'excellent' | 'marginal' | 'unacceptable';
+}
+
+export type FilterOperator = 'in' | 'not_in' | 'range' | 'regex';
+
+export interface FilterRule {
+  id: string;
+  column: string;
+  operator: FilterOperator;
+  value: string | string[]; // e.g., ['0402', '0403'] for 'in', or ['0320', '0330'] for 'range'
+  groupAlias?: string;      // If set, matches will be renamed to this alias in the analysis
+  enabled: boolean;
+}
+
+export interface KappaResult {
+  kappa: number;
+  se: number;
+  z: number;
+  pValue: number;
+  observedAgreement: number;
+  expectedAgreement: number;
+  n: number;
+  isAcceptable: 'excellent' | 'marginal' | 'unacceptable';
+  crossTab: { [key: string]: { [key: string]: number } };
+}
+
+export interface LinearityBiasResult {
+  equation: string;
+  slope: number;
+  intercept: number;
+  rSquared: number;
+  meanBias: number;
+  biasStats: { refValue: number; bias: number; meanBias: number; pValue: number }[];
+  isLinearityAcceptable: boolean;
+  isBiasAcceptable: boolean;
+}
+
+export interface AnalysisMetadata {
+  totalCount: number;
+  validCount: number;
+  invalidCount: number;
 }

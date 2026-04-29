@@ -1,5 +1,6 @@
 import { RawDataRow, BoxPlotStats } from '../types';
 import * as d3 from 'd3';
+import { DERIVED_GROUP_SORT_COLUMN } from './groupBuilder';
 
 /**
  * Enhanced statistics calculation for quality engineering.
@@ -22,7 +23,14 @@ export const calculateBoxPlotStats = (
   const stats: BoxPlotStats[] = [];
   let totalValidCount = 0;
 
-  for (const [groupName, groupRecords] of groupedData) {
+  const groupedEntries = Array.from(groupedData.entries()).sort(([, recordsA], [, recordsB]) => {
+    const sortA = String(recordsA[0]?.[DERIVED_GROUP_SORT_COLUMN] ?? '');
+    const sortB = String(recordsB[0]?.[DERIVED_GROUP_SORT_COLUMN] ?? '');
+    if (!sortA && !sortB) return 0;
+    return sortA.localeCompare(sortB, 'zh-Hans-CN', { numeric: true });
+  });
+
+  for (const [groupName, groupRecords] of groupedEntries) {
     // Robust data cleaning: Filter out non-numeric values and NaNs
     const values = groupRecords
       .map((d) => {
@@ -69,6 +77,7 @@ export const calculateBoxPlotStats = (
     const mean = d3.mean(values) ?? 0;
 
     stats.push({
+      n,
       groupName,
       id: groupName,
       q1,

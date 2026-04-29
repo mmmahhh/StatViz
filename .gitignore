@@ -1,3 +1,10 @@
 node_modules/
 dist/
 .DS_Store
+
+# Local tool runtime / caches
+.claude/
+.omc/sessions/
+.omc/state/
+graphify-out/cache/
+tsconfig.tsbuildinfo

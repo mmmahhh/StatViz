@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { RawDataRow, DimensionConfig } from '../types';
+import { immer } from 'zustand/middleware/immer';
+import { RawDataRow, DimensionConfig, AnalysisModule, CapabilityConfig, FilterRule, GroupBuilderConfig, GroupBuilderField } from '../types';
 
 // ─── Dataset Model ───────────────────────────────────────────
 export interface Dataset {
@@ -8,6 +8,10 @@ export interface Dataset {
   name: string;
   rawData: RawDataRow[];
   dimensions: DimensionConfig;
+  module: AnalysisModule;
+  capabilityConfig: CapabilityConfig;
+  filters: FilterRule[];
+  groupBuilder: GroupBuilderConfig;
 }
 
 const createEmptyDimensions = (): DimensionConfig => ({
@@ -16,7 +20,26 @@ const createEmptyDimensions = (): DimensionConfig => ({
   color: null,
 });
 
-const makeId = () => `ds-${Math.random().toString(36).substring(2, 9)}`;
+const defaultCapabilityConfig: CapabilityConfig = {
+  usl: null,
+  lsl: null,
+  target: null,
+  subgroupSize: 1,
+};
+
+const createEmptyGroupField = (): GroupBuilderField => ({
+  column: '',
+  transform: 'original',
+  prefix: '',
+});
+
+const defaultGroupBuilder: GroupBuilderConfig = {
+  enabled: false,
+  separator: '',
+  fields: [createEmptyGroupField(), createEmptyGroupField(), createEmptyGroupField()],
+};
+
+const makeId = () => `ds-${crypto.randomUUID().slice(0, 8)}`;
 
 // ─── Data Store ──────────────────────────────────────────────
 interface DataState {
@@ -24,109 +47,159 @@ interface DataState {
   activeDatasetId: string | null;
   language: 'en' | 'zh';
 
-  // Convenience getters (computed via selectors below)
-
   // Actions
   addDataset: (name: string, data: RawDataRow[]) => void;
   removeDataset: (id: string) => void;
   setActiveDataset: (id: string) => void;
-  updateCell: (datasetId: string, rowIndex: number, column: string, value: string | number) => void;
+  updateCell: (datasetId: string, rowIndex: number, column: string, value: string | number | null) => void;
   setRawData: (data: RawDataRow[]) => void;
   setDimensions: (dims: Partial<DimensionConfig>) => void;
+  setModule: (module: AnalysisModule) => void;
+  setCapabilityConfig: (config: Partial<CapabilityConfig>) => void;
+  setGroupBuilder: (datasetId: string, config: Partial<GroupBuilderConfig>) => void;
+  addFilter: (datasetId: string, filter: FilterRule) => void;
+  updateFilter: (datasetId: string, filterId: string, filter: Partial<FilterRule>) => void;
+  removeFilter: (datasetId: string, filterId: string) => void;
+  clearFilters: (datasetId: string) => void;
   setLanguage: (lang: 'en' | 'zh') => void;
   resetData: () => void;
 }
 
 export const useDataStore = create<DataState>()(
-  persist(
-    (set) => ({
-  datasets: [],
-  activeDatasetId: null,
-  language: 'zh',
+  immer((set) => ({
+    datasets: [],
+    activeDatasetId: null,
+    language: 'zh',
 
-  addDataset: (name, data) => {
-    const id = makeId();
-    set((state) => ({
-      datasets: [
-        ...state.datasets,
-        { id, name, rawData: data, dimensions: createEmptyDimensions() },
-      ],
-      activeDatasetId: id,
-    }));
-  },
+    addDataset: (name, data) => {
+      const id = makeId();
+      set((state) => {
+        state.datasets.push({
+          id,
+          name,
+          rawData: data,
+          dimensions: createEmptyDimensions(),
+          module: 'basic',
+          capabilityConfig: { ...defaultCapabilityConfig },
+          filters: [],
+          groupBuilder: {
+            ...defaultGroupBuilder,
+            fields: defaultGroupBuilder.fields.map((field) => ({ ...field })),
+          },
+        });
+        state.activeDatasetId = id;
+      });
+    },
 
-  removeDataset: (id) =>
-    set((state) => {
-      const remaining = state.datasets.filter((d) => d.id !== id);
-      return {
-        datasets: remaining,
-        activeDatasetId:
-          state.activeDatasetId === id
-            ? remaining[0]?.id ?? null
-            : state.activeDatasetId,
-      };
-    }),
-
-  setActiveDataset: (id) => set({ activeDatasetId: id }),
-
-  updateCell: (datasetId, rowIndex, column, value) =>
-    set((state) => ({
-      datasets: state.datasets.map((ds) => {
-        if (ds.id !== datasetId) return ds;
-        const newRawData = [...ds.rawData];
-        newRawData[rowIndex] = { ...newRawData[rowIndex], [column]: value };
-        return { ...ds, rawData: newRawData };
+    removeDataset: (id) =>
+      set((state) => {
+        state.datasets = state.datasets.filter((d) => d.id !== id);
+        if (state.activeDatasetId === id) {
+          state.activeDatasetId = state.datasets[0]?.id ?? null;
+        }
       }),
-    })),
 
-  // Legacy-compatible: updates the active dataset's rawData
-  setRawData: (data) =>
-    set((state) => {
-      if (!state.activeDatasetId) {
-        // First import → create a new dataset
-        const id = makeId();
-        return {
-          datasets: [
-            ...state.datasets,
-            { id, name: 'Dataset 1', rawData: data, dimensions: createEmptyDimensions() },
-          ],
-          activeDatasetId: id,
-        };
-      }
-      return {
-        datasets: state.datasets.map((ds) =>
-          ds.id === state.activeDatasetId ? { ...ds, rawData: data } : ds
-        ),
-      };
-    }),
+    setActiveDataset: (id) => set({ activeDatasetId: id }),
 
-  setDimensions: (newDims) =>
-    set((state) => ({
-      datasets: state.datasets.map((ds) =>
-        ds.id === state.activeDatasetId
-          ? { ...ds, dimensions: { ...ds.dimensions, ...newDims } }
-          : ds
-      ),
-    })),
-  
-  setLanguage: (lang) => set({ language: lang }),
-
-  resetData: () => set({ datasets: [], activeDatasetId: null }),
-}),
-    {
-      name: 'statviz-data',
-      storage: createJSONStorage(() =>
-        typeof window !== 'undefined' && window.localStorage
-          ? window.localStorage
-          : { getItem: () => null, setItem: () => {}, removeItem: () => {} }
-      ),
-      partialize: (state) => ({
-        datasets: state.datasets,
-        activeDatasetId: state.activeDatasetId,
-        language: state.language,
+    updateCell: (datasetId, rowIndex, column, value) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === datasetId);
+        if (ds && ds.rawData[rowIndex]) {
+          ds.rawData[rowIndex][column] = value;
+        }
       }),
-    }
-  )
+
+    setRawData: (data) =>
+      set((state) => {
+        if (!state.activeDatasetId) {
+          const id = makeId();
+          state.datasets.push({
+            id,
+            name: 'Dataset 1',
+            rawData: data,
+            dimensions: createEmptyDimensions(),
+            module: 'basic',
+            capabilityConfig: { ...defaultCapabilityConfig },
+            filters: [],
+            groupBuilder: {
+              ...defaultGroupBuilder,
+              fields: defaultGroupBuilder.fields.map((field) => ({ ...field })),
+            },
+          });
+          state.activeDatasetId = id;
+        } else {
+          const ds = state.datasets.find((d) => d.id === state.activeDatasetId);
+          if (ds) ds.rawData = data;
+        }
+      }),
+
+    setDimensions: (newDims) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === state.activeDatasetId);
+        if (ds) {
+          ds.dimensions = { ...ds.dimensions, ...newDims };
+        }
+      }),
+
+    setModule: (module) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === state.activeDatasetId);
+        if (ds) ds.module = module;
+      }),
+
+    setCapabilityConfig: (config) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === state.activeDatasetId);
+        if (ds) {
+          ds.capabilityConfig = { ...ds.capabilityConfig, ...config };
+        }
+      }),
+
+    setGroupBuilder: (datasetId, config) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === datasetId);
+        if (ds) {
+          ds.groupBuilder = {
+            ...ds.groupBuilder,
+            ...config,
+            fields: config.fields ?? ds.groupBuilder.fields,
+          };
+        }
+      }),
+
+    addFilter: (datasetId, filter) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === datasetId);
+        if (ds) ds.filters.push(filter);
+      }),
+
+    updateFilter: (datasetId, filterId, filter) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === datasetId);
+        if (ds) {
+          const f = ds.filters.find((item) => item.id === filterId);
+          if (f) Object.assign(f, filter);
+        }
+      }),
+
+    removeFilter: (datasetId, filterId) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === datasetId);
+        if (ds) {
+          ds.filters = ds.filters.filter((f) => f.id !== filterId);
+        }
+      }),
+
+    clearFilters: (datasetId) =>
+      set((state) => {
+        const ds = state.datasets.find((d) => d.id === datasetId);
+        if (ds) ds.filters = [];
+      }),
+
+    setLanguage: (lang) => set({ language: lang }),
+
+    resetData: () => set({ datasets: [], activeDatasetId: null }),
+  }))
 );
 
 // ─── Selectors ───────────────────────────────────────────────
@@ -135,29 +208,3 @@ export const useActiveDataset = (): Dataset | undefined => {
   const activeId = useDataStore((s) => s.activeDatasetId);
   return datasets.find((d) => d.id === activeId);
 };
-
-// ─── Style Override Store (unchanged) ────────────────────────
-interface StyleState {
-  styleOverrides: Record<string, { color?: string }>;
-  setStyleOverride: (id: string, style: { color?: string }) => void;
-  clearStyleOverride: (id: string) => void;
-  clearAllOverrides: () => void;
-}
-
-export const useStyleStore = create<StyleState>((set) => ({
-  styleOverrides: {},
-  setStyleOverride: (id, style) =>
-    set((state) => ({
-      styleOverrides: {
-        ...state.styleOverrides,
-        [id]: { ...state.styleOverrides[id], ...style },
-      },
-    })),
-  clearStyleOverride: (id) =>
-    set((state) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { [id]: _, ...rest } = state.styleOverrides;
-      return { styleOverrides: rest };
-    }),
-  clearAllOverrides: () => set({ styleOverrides: {} }),
-}));
