@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { RawDataRow, DimensionConfig } from '../types';
 
 // ─── Dataset Model ───────────────────────────────────────────
@@ -36,7 +37,9 @@ interface DataState {
   resetData: () => void;
 }
 
-export const useDataStore = create<DataState>((set) => ({
+export const useDataStore = create<DataState>()(
+  persist(
+    (set) => ({
   datasets: [],
   activeDatasetId: null,
   language: 'zh',
@@ -109,7 +112,22 @@ export const useDataStore = create<DataState>((set) => ({
   setLanguage: (lang) => set({ language: lang }),
 
   resetData: () => set({ datasets: [], activeDatasetId: null }),
-}));
+}),
+    {
+      name: 'statviz-data',
+      storage: createJSONStorage(() =>
+        typeof window !== 'undefined' && window.localStorage
+          ? window.localStorage
+          : { getItem: () => null, setItem: () => {}, removeItem: () => {} }
+      ),
+      partialize: (state) => ({
+        datasets: state.datasets,
+        activeDatasetId: state.activeDatasetId,
+        language: state.language,
+      }),
+    }
+  )
+);
 
 // ─── Selectors ───────────────────────────────────────────────
 export const useActiveDataset = (): Dataset | undefined => {

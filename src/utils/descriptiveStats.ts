@@ -22,18 +22,20 @@ export const computeDescriptiveStats = (values: number[]): DescriptiveResult | n
   const median = d3.quantile(clean, 0.5) ?? mean;
   const q3 = d3.quantile(clean, 0.75) ?? max;
 
-  // Skewness (Fisher's definition, unbiased)
+  // Skewness — adjusted Fisher–Pearson (G1, Minitab/Excel convention)
   let skewness = 0;
   if (n > 2 && stdev > 0) {
-    const m3 = d3.sum(clean, (v) => ((v - mean) / stdev) ** 3) / n;
-    skewness = (n * m3) / ((n - 1) * (n - 2) / n); // adjusted
+    const sumZ3 = d3.sum(clean, (v) => ((v - mean) / stdev) ** 3);
+    skewness = (n / ((n - 1) * (n - 2))) * sumZ3;
   }
 
-  // Excess kurtosis (Fisher's definition)
+  // Excess kurtosis — adjusted (G2, Minitab/Excel convention)
   let kurtosis = 0;
   if (n > 3 && stdev > 0) {
-    const m4 = d3.sum(clean, (v) => ((v - mean) / stdev) ** 4) / n;
-    kurtosis = m4 - 3; // excess kurtosis
+    const sumZ4 = d3.sum(clean, (v) => ((v - mean) / stdev) ** 4);
+    kurtosis =
+      ((n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))) * sumZ4 -
+      (3 * (n - 1) ** 2) / ((n - 2) * (n - 3));
   }
 
   // 95% CI for mean (t-distribution approximation; use z=1.96 for simplicity)
