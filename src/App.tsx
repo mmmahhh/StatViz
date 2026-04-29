@@ -1,4 +1,5 @@
 import React, { useRef, useMemo, useState, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { useDataStore, useActiveDataset } from './store/useDataStore';
 import { parseFile } from './utils/fileParser';
 import { Sidebar } from './components/layout/Sidebar';
@@ -75,9 +76,11 @@ function App() {
 
     try {
       const parsedData = await parseFile(file);
-      let name = file.name.replace(/\.[^/.]+$/, '');
-      if (datasets.some(d => d.name === name)) {
-        name = `${name} (${datasets.length + 1})`;
+      const baseName = file.name.replace(/\.[^/.]+$/, '');
+      let name = baseName;
+      let suffix = 2;
+      while (datasets.some(d => d.name === name)) {
+        name = `${baseName} (${suffix++})`;
       }
       addDataset(name, parsedData);
       setShowPlot(false);
@@ -159,52 +162,51 @@ function App() {
   const exportAsPDF = useCallback(async () => {
     if (!reportContainerRef.current) return;
     setExportMenuOpen(false);
-    setIsExporting(true);
 
-    // Wait for the DOM to update with full data
-    setTimeout(async () => {
-      try {
-        const element = reportContainerRef.current!;
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#131316',
-          logging: false,
-          windowHeight: element.scrollHeight,
-        });
+    // Synchronously flush isExporting=true so the table expands fully before capture
+    flushSync(() => setIsExporting(true));
+    // Wait one paint frame so layout reflects the expanded table
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-        const imgData = canvas.toDataURL('image/png');
-        
-        // A4 dimensions in pt: [595.28, 841.89]
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        const imgProps = pdf.getImageProperties(imgData);
-        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        let heightLeft = imgHeight;
-        let position = 0;
+    try {
+      const element = reportContainerRef.current;
+      if (!element) return;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#131316',
+        logging: false,
+        windowHeight: element.scrollHeight,
+      });
 
-        // First page
+      const imgData = canvas.toDataURL('image/png');
+
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
         heightLeft -= pdfHeight;
-
-        // Subsequent pages
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-          heightLeft -= pdfHeight;
-        }
-
-        pdf.save(`statviz-full-report-${Date.now()}.pdf`);
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-      } finally {
-        setIsExporting(false);
       }
-    }, 500); 
+
+      pdf.save(`statviz-full-report-${Date.now()}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
   }, []);
 
   return (
@@ -323,9 +325,9 @@ function App() {
                                       suppressContentEditableWarning
                                       onBlur={(e) => {
                                         if (isExporting) return;
-                                        const newValue = e.currentTarget.textContent || '';
-                                        const numValue = parseFloat(newValue);
-                                        useDataStore.getState().updateCell(ds.id, idx, col, isNaN(numValue) ? newValue : numValue);
+                                        const newValue = (e.currentTarget.textContent || '').trim();
+                                        const isNumeric = /^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(newValue);
+                                        useDataStore.getState().updateCell(ds.id, idx, col, isNumeric ? Number(newValue) : newValue);
                                       }}
                                     >
                                       {String(row[col] ?? '')}

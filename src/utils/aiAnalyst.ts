@@ -37,7 +37,7 @@ export const analyzeDatasetAI = async (stats: DescriptiveResult, outliersCount: 
   }
 
   const prompt = `以下是当前数据集的描述性统计结果：
-- 样本量 (Count): ${stats.count}
+- 样本量 (Count): ${stats.n}
 - 均值 (Mean): ${stats.mean.toFixed(4)}
 - 中位数 (Median): ${stats.median.toFixed(4)}
 - 标准差 (Stdev): ${stats.stdev.toFixed(4)}
@@ -77,16 +77,35 @@ export const analyzeDatasetAI = async (stats: DescriptiveResult, outliersCount: 
     // 1. 移除 <think>...</think> 标签及其内容
     const cleanedContent = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
-    // 2. 使用正则表达式尝试提取 JSON 数组部分 [...]
-    // 这样即便模型输出了额外的开场白或结束语，也能准确抓取 JSON
-    const jsonMatch = cleanedContent.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    
+    const jsonMatch = cleanedContent.match(/\[\s*\{[\s\S]*?\}\s*\]/);
+
     if (!jsonMatch) {
       console.error('Failed to find JSON array in content:', cleanedContent);
       throw new Error('AI 返回的格式不正确，无法解析分析报告。');
     }
 
-    const insights: AIInsight[] = JSON.parse(jsonMatch[0]);
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed)) {
+      throw new Error('AI 返回的不是数组结构。');
+    }
+
+    const validTypes = ['normality', 'stability', 'outliers', 'summary', 'trend', 'correlation'];
+    const validStatus = ['good', 'warning', 'alert'];
+    const insights: AIInsight[] = parsed
+      .filter((item): item is AIInsight => {
+        if (!item || typeof item !== 'object') return false;
+        const o = item as Record<string, unknown>;
+        return (
+          typeof o.type === 'string' && validTypes.includes(o.type) &&
+          typeof o.status === 'string' && validStatus.includes(o.status) &&
+          typeof o.title === 'string' &&
+          typeof o.content === 'string'
+        );
+      });
+
+    if (insights.length === 0) {
+      throw new Error('AI 返回的条目均不符合预期结构。');
+    }
     return insights;
   } catch (err: unknown) {
     console.error('AI Analysis Error:', err);
